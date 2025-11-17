@@ -26,7 +26,7 @@ USER root
 RUN mkdir -p /app/logs
 
 # 暴露端口
-EXPOSE 3000
+EXPOSE 7860
 
 # 添加健康检查
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
