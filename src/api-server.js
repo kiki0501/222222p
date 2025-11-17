@@ -161,8 +161,8 @@ async function startServer() {
         console.log(`  • Health check: /health`);
         console.log(`  • UI Management Console: http://${CONFIG.HOST}:${CONFIG.SERVER_PORT}/`);
 
-        // Auto-open browser to UI (only if host is localhost or 127.0.0.1)
-        // if (CONFIG.HOST === 'localhost' || CONFIG.HOST === '127.0.0.1') {
+        // Auto-open browser to UI (only if not in container/cloud environment)
+        if (!process.env.SPACE_ID && !process.env.RAILWAY_ENVIRONMENT && (CONFIG.HOST === 'localhost' || CONFIG.HOST === '127.0.0.1')) {
             try {
                 const open = (await import('open')).default;
                 setTimeout(() => {
@@ -177,7 +177,9 @@ async function startServer() {
             } catch (err) {
                 console.log(`[UI] Login page available at: http://${CONFIG.HOST}:${CONFIG.SERVER_PORT}/login.html`);
             }
-        // }
+        } else {
+            console.log(`[UI] Login page available at: http://${CONFIG.HOST}:${CONFIG.SERVER_PORT}/login.html`);
+        }
 
         if (CONFIG.CRON_REFRESH_TOKEN) {
             console.log(`  • Cron Near Minutes: ${CONFIG.CRON_NEAR_MINUTES}`);
