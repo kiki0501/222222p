@@ -686,7 +686,12 @@
 
                 <!-- Provider Pools Section -->
                 <section id="providers" class="section" aria-labelledby="providers-title">
-                    <h2 id="providers-title">提供商池管理</h2>
+                    <div class="section-header">
+                        <h2 id="providers-title">提供商池管理</h2>
+                        <button class="btn btn-primary" id="uploadKiroCredsBtn" aria-label="上传 Kiro 凭据">
+                            <i class="fas fa-upload"></i> 上传 Kiro 凭据
+                        </button>
+                    </div>
                     <!-- Provider Pool Stats -->
                     <div class="stats-grid">
                         <div class="stat-card">
@@ -746,6 +751,43 @@
 
     <!-- Toast Notifications -->
     <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Upload Kiro Credentials Modal -->
+    <div id="uploadKiroModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>上传 Kiro 认证凭据</h3>
+                <button class="modal-close" aria-label="关闭">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="upload-area" id="kiroUploadArea">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>拖拽 kiro-auth-token.json 文件到这里</p>
+                    <p>或</p>
+                    <button class="btn btn-outline" id="selectKiroFileBtn">选择文件</button>
+                    <input type="file" id="kiroFileInput" accept=".json" style="display: none;">
+                </div>
+                <div class="file-info" id="kiroFileInfo" style="display: none;">
+                    <i class="fas fa-file-code"></i>
+                    <span id="kiroFileName"></span>
+                    <button class="btn-icon" id="removeKiroFile" aria-label="移除文件">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="form-group" style="margin-top: 20px;">
+                    <label for="kiroAccountName">账号名称（可选）</label>
+                    <input type="text" id="kiroAccountName" class="form-control" placeholder="例如: kiro-account-1">
+                    <small class="form-text">为此账号设置一个易识别的名称</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelKiroUpload">取消</button>
+                <button class="btn btn-success" id="confirmKiroUpload" disabled>
+                    <i class="fas fa-upload"></i> 上传并添加到号池
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Scripts -->
     <script src="app/auth.js"></script>

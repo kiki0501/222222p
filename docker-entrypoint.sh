@@ -13,10 +13,16 @@ if [ ! -f config.json ]; then
     fi
 fi
 
-# 如果provider_pools.json不存在，创建空配置
+# 检查provider_pools.json
 if [ ! -f provider_pools.json ]; then
-    echo "[Setup] Creating empty provider_pools.json"
+    echo "[Setup] Warning: provider_pools.json not found, creating empty file"
     echo '{}' > provider_pools.json
+else
+    echo "[Setup] Found provider_pools.json"
+    # 显示文件大小和内容预览
+    ls -lh provider_pools.json
+    echo "[Setup] Content preview:"
+    head -n 5 provider_pools.json
 fi
 
 # 设置登录密码（从环境变量或使用默认值）

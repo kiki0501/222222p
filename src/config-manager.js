@@ -275,6 +275,13 @@ export async function initializeConfig(args = process.argv.slice(2), configFileP
             const poolsData = await pfs.readFile(currentConfig.PROVIDER_POOLS_FILE_PATH, 'utf8');
             currentConfig.providerPools = JSON.parse(poolsData);
             console.log(`[Config] Loaded provider pools from ${currentConfig.PROVIDER_POOLS_FILE_PATH}`);
+            
+            // 调试信息：显示加载的号池数量
+            const poolCount = Object.keys(currentConfig.providerPools).length;
+            console.log(`[Config] Provider pools loaded: ${poolCount} provider(s)`);
+            for (const [provider, accounts] of Object.entries(currentConfig.providerPools)) {
+                console.log(`[Config]   - ${provider}: ${accounts.length} account(s)`);
+            }
         } catch (error) {
             console.error(`[Config Error] Failed to load provider pools from ${currentConfig.PROVIDER_POOLS_FILE_PATH}: ${error.message}`);
             currentConfig.providerPools = {};

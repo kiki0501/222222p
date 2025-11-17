@@ -27,10 +27,21 @@ RUN mkdir -p /app/logs
 
 # 确保配置文件存在
 RUN if [ ! -f config.json ] && [ -f config.json.example ]; then \
+        echo "[Build] Creating config.json from example"; \
         cp config.json.example config.json; \
     fi && \
     if [ ! -f provider_pools.json ]; then \
+        echo "[Build] Warning: provider_pools.json not found, creating empty file"; \
         echo '{}' > provider_pools.json; \
+    else \
+        echo "[Build] Found provider_pools.json"; \
+        ls -lh provider_pools.json; \
+    fi && \
+    if [ ! -f kiro-auth-token.json ]; then \
+        echo "[Build] Warning: kiro-auth-token.json not found"; \
+    else \
+        echo "[Build] Found kiro-auth-token.json"; \
+        ls -lh kiro-auth-token.json; \
     fi
 
 # 复制启动脚本

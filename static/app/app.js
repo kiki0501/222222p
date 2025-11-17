@@ -50,6 +50,10 @@ import {
 } from './modal.js';
 
 import {
+    initKiroUpload
+} from './kiro-upload.js';
+
+import {
     initRoutingExamples
 } from './routing-examples.js';
 
@@ -96,6 +100,7 @@ function initApp() {
     initFileUpload(); // 初始化文件上传功能
     initRoutingExamples(); // 初始化路径路由示例功能
     initUploadConfigManager(); // 初始化上传配置管理功能
+    initKiroUpload(); // 初始化 Kiro 凭据上传功能
     loadInitialData();
     
     // 显示欢迎消息

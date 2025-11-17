@@ -2840,3 +2840,179 @@ input:checked + .toggle-slider:before {
         padding: 0.4rem 0.6rem;
     }
 }
+
+/* Kiro Upload Modal Styles */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.section-header h2 {
+    margin: 0;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #e1e8ed;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+    color: #333;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.modal-close:hover {
+    color: #333;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-footer {
+    padding: 20px;
+    border-top: 1px solid #e1e8ed;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.upload-area {
+    border: 2px dashed #059669;
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+    background: #f0fdf4;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.upload-area:hover {
+    background: #dcfce7;
+    border-color: #047857;
+}
+
+.upload-area.drag-over {
+    background: #dcfce7;
+    border-color: #047857;
+    transform: scale(1.02);
+}
+
+.upload-area i {
+    font-size: 48px;
+    color: #059669;
+    margin-bottom: 15px;
+}
+
+.upload-area p {
+    margin: 10px 0;
+    color: #666;
+}
+
+.file-info {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    background: #f0fdf4;
+    border-radius: 8px;
+    border: 1px solid #059669;
+}
+
+.file-info i {
+    font-size: 24px;
+    color: #059669;
+}
+
+.file-info span {
+    flex: 1;
+    color: #333;
+    font-weight: 500;
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    padding: 5px;
+    transition: color 0.2s;
+}
+
+.btn-icon:hover {
+    color: #e74c3c;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+        max-height: 95vh;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .section-header button {
+        width: 100%;
+    }
+}
