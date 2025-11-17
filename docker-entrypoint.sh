@@ -47,15 +47,23 @@ if [ -n "$PORT" ]; then
     echo "[Setup] Using PORT from environment: $PORT"
 fi
 
-# 使用 sed 更新 config.json 中的 HOST 为 0.0.0.0（容器环境必须）
+# 使用 sed 更新 config.json 中的配置（容器环境必须）
 if [ -f config.json ]; then
-    echo "[Setup] Updating HOST to 0.0.0.0 in config.json"
+    echo "[Setup] Updating config.json for container environment"
+    
+    # 更新 HOST 为 0.0.0.0
     sed -i 's/"HOST": "127.0.0.1"/"HOST": "0.0.0.0"/g' config.json
     
-    # 如果设置了 PORT 环境变量，也更新配置文件
+    # 如果设置了 SERVER_PORT 环境变量，更新端口
     if [ -n "$SERVER_PORT" ]; then
-        echo "[Setup] Updating SERVER_PORT to $SERVER_PORT in config.json"
+        echo "[Setup] Updating SERVER_PORT to $SERVER_PORT"
         sed -i "s/\"SERVER_PORT\": [0-9]*/\"SERVER_PORT\": $SERVER_PORT/g" config.json
+    fi
+    
+    # 如果设置了 REQUIRED_API_KEY 环境变量，更新 API Key
+    if [ -n "$REQUIRED_API_KEY" ]; then
+        echo "[Setup] Updating REQUIRED_API_KEY from environment variable"
+        sed -i "s/\"REQUIRED_API_KEY\": \"[^\"]*\"/\"REQUIRED_API_KEY\": \"$REQUIRED_API_KEY\"/g" config.json
     fi
 fi
 

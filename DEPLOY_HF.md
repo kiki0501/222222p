@@ -22,10 +22,15 @@
 MODEL_PROVIDER=claude-kiro-oauth
 SERVER_PORT=7860
 HOST=0.0.0.0
-UI_PASSWORD=your_secure_password  # Web UI 登录密码，默认为 123456
+REQUIRED_API_KEY=your_api_key        # API 访问密钥，默认为 123456
+UI_PASSWORD=your_secure_password     # Web UI 登录密码，默认为 123456
 ```
 
-**重要提示**：强烈建议修改默认密码 `UI_PASSWORD`，特别是在公开部署时！
+**重要提示**：
+- 强烈建议修改默认的 `REQUIRED_API_KEY` 和 `UI_PASSWORD`
+- `REQUIRED_API_KEY` 用于 API 调用认证
+- `UI_PASSWORD` 用于 Web UI 登录
+- 在公开部署时必须修改这两个密码！
 
 ### 4. 上传文件
 将以下文件推送到 Space 仓库：
@@ -52,8 +57,10 @@ git push
 | 变量名 | 默认值 | 说明 |
 |--------|--------|------|
 | `PORT` | 7860 | HF Space 自动设置，无需手动配置 |
-| `MODEL_PROVIDER` | claude-kiro-oauth | 模型提供商 |
+| `SERVER_PORT` | 7860 | 服务器端口 |
 | `HOST` | 0.0.0.0 | 监听地址 |
+| `MODEL_PROVIDER` | claude-kiro-oauth | 模型提供商 |
+| `REQUIRED_API_KEY` | 123456 | API 访问密钥（用于 API 调用认证） |
 | `UI_PASSWORD` | 123456 | Web UI 登录密码 |
 | `SPACE_ID` | docker | 容器标识（自动设置） |
 

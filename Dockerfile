@@ -56,6 +56,7 @@ ENV SPACE_ID=docker \
     SERVER_PORT=7860 \
     HOST=0.0.0.0 \
     MODEL_PROVIDER=claude-kiro-oauth \
+    REQUIRED_API_KEY=123456 \
     UI_PASSWORD=123456
 
 # 添加健康检查

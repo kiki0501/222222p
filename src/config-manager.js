@@ -290,6 +290,24 @@ export async function initializeConfig(args = process.argv.slice(2), configFileP
         currentConfig.providerPools = {};
     }
 
+    // Override with environment variables (if set)
+    if (process.env.REQUIRED_API_KEY) {
+        currentConfig.REQUIRED_API_KEY = process.env.REQUIRED_API_KEY;
+        console.log('[Config] REQUIRED_API_KEY overridden from environment variable');
+    }
+    if (process.env.SERVER_PORT) {
+        currentConfig.SERVER_PORT = parseInt(process.env.SERVER_PORT, 10);
+        console.log(`[Config] SERVER_PORT overridden from environment variable: ${currentConfig.SERVER_PORT}`);
+    }
+    if (process.env.HOST) {
+        currentConfig.HOST = process.env.HOST;
+        console.log(`[Config] HOST overridden from environment variable: ${currentConfig.HOST}`);
+    }
+    if (process.env.MODEL_PROVIDER) {
+        currentConfig.MODEL_PROVIDER = process.env.MODEL_PROVIDER;
+        console.log(`[Config] MODEL_PROVIDER overridden from environment variable: ${currentConfig.MODEL_PROVIDER}`);
+    }
+
     // Set PROMPT_LOG_FILENAME based on the determined config
     if (currentConfig.PROMPT_LOG_MODE === 'file') {
         const now = new Date();
