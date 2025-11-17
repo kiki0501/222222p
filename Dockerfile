@@ -28,6 +28,9 @@ RUN mkdir -p /app/logs
 # 暴露端口
 EXPOSE 7860
 
+# 设置环境变量（标识容器环境，禁用浏览器自动打开）
+ENV SPACE_ID=docker
+
 # 添加健康检查
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node healthcheck.js || exit 1
