@@ -25,17 +25,22 @@ USER root
 # 创建目录用于存储日志和系统提示文件
 RUN mkdir -p /app/logs
 
+# 复制启动脚本
+COPY docker-entrypoint.sh /app/
+RUN chmod +x /app/docker-entrypoint.sh
+
 # 暴露端口
 EXPOSE 7860
 
-# 设置环境变量（标识容器环境，禁用浏览器自动打开）
-ENV SPACE_ID=docker
+# 设置环境变量
+ENV SPACE_ID=docker \
+    SERVER_PORT=7860 \
+    HOST=0.0.0.0 \
+    MODEL_PROVIDER=claude-kiro-oauth
 
 # 添加健康检查
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node healthcheck.js || exit 1
 
-# 设置启动命令
-# 使用默认配置启动服务器，支持通过环境变量配置
-# 通过环境变量传递参数，例如：docker run -e ARGS="--api-key mykey --port 8080" ...
-CMD ["sh", "-c", "node src/api-server.js $ARGS"]
+# 设置启动脚本为入口点
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
