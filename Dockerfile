@@ -30,18 +30,18 @@ RUN if [ ! -f config.json ] && [ -f config.json.example ]; then \
         echo "[Build] Creating config.json from example"; \
         cp config.json.example config.json; \
     fi && \
-    if [ ! -f provider_pools.json ]; then \
-        echo "[Build] Warning: provider_pools.json not found, creating empty file"; \
-        echo '{}' > provider_pools.json; \
-    else \
-        echo "[Build] Found provider_pools.json"; \
+    echo "[Build] Checking configuration files..." && \
+    if [ -f provider_pools.json ]; then \
+        echo "[Build] Found provider_pools.json ($(wc -c < provider_pools.json) bytes)"; \
         ls -lh provider_pools.json; \
-    fi && \
-    if [ ! -f kiro-auth-token.json ]; then \
-        echo "[Build] Warning: kiro-auth-token.json not found"; \
     else \
-        echo "[Build] Found kiro-auth-token.json"; \
+        echo "[Build] provider_pools.json not found (will be created at runtime if needed)"; \
+    fi && \
+    if [ -f kiro-auth-token.json ]; then \
+        echo "[Build] Found kiro-auth-token.json ($(wc -c < kiro-auth-token.json) bytes)"; \
         ls -lh kiro-auth-token.json; \
+    else \
+        echo "[Build] kiro-auth-token.json not found"; \
     fi
 
 # 复制启动脚本

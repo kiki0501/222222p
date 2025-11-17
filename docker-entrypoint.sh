@@ -20,9 +20,16 @@ if [ ! -f provider_pools.json ]; then
 else
     echo "[Setup] Found provider_pools.json"
     # 显示文件大小和内容预览
+    FILE_SIZE=$(wc -c < provider_pools.json)
     ls -lh provider_pools.json
-    echo "[Setup] Content preview:"
-    head -n 5 provider_pools.json
+    
+    # 如果文件太小（小于10字节），可能是空文件，不要覆盖
+    if [ "$FILE_SIZE" -lt 10 ]; then
+        echo "[Setup] Warning: provider_pools.json is too small ($FILE_SIZE bytes), might be empty"
+    else
+        echo "[Setup] Content preview:"
+        head -n 10 provider_pools.json
+    fi
 fi
 
 # 设置登录密码（从环境变量或使用默认值）
