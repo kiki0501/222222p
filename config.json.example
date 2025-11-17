@@ -1,6 +1,6 @@
 {
     "REQUIRED_API_KEY": "123456",
-    "SERVER_PORT": 3000,
+    "SERVER_PORT": 7860,
     "HOST": "127.0.0.1",
     "MODEL_PROVIDER": "gemini-cli-oauth",
     "OPENAI_API_KEY": "xxx",

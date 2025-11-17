@@ -20,7 +20,7 @@ async function loadConfiguration() {
 
         if (apiKeyEl) apiKeyEl.value = data.REQUIRED_API_KEY || '';
         if (hostEl) hostEl.value = data.HOST || '127.0.0.1';
-        if (portEl) portEl.value = data.SERVER_PORT || 3000;
+        if (portEl) portEl.value = data.SERVER_PORT || 7860;
         if (modelProviderEl) modelProviderEl.value = data.MODEL_PROVIDER || 'gemini-cli-oauth';
         if (systemPromptEl) systemPromptEl.value = data.systemPrompt || '';
         
@@ -128,7 +128,7 @@ async function saveConfiguration() {
     const config = {
         REQUIRED_API_KEY: document.getElementById('apiKey')?.value || '',
         HOST: document.getElementById('host')?.value || '127.0.0.1',
-        SERVER_PORT: parseInt(document.getElementById('port')?.value || 3000),
+        SERVER_PORT: parseInt(document.getElementById('port')?.value || 7860),
         MODEL_PROVIDER: document.getElementById('modelProvider')?.value || 'gemini-cli-oauth',
         systemPrompt: document.getElementById('systemPrompt')?.value || '',
     };

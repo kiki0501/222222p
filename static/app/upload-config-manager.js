@@ -314,7 +314,7 @@ function generateMockConfigData() {
             isUsed: true,
             content: JSON.stringify({
                 "REQUIRED_API_KEY": "123456",
-                "SERVER_PORT": 3000
+                "SERVER_PORT": 7860
             }, null, 2)
         },
         {
