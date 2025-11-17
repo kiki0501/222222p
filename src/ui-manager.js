@@ -376,6 +376,60 @@ export async function handleUIApiRequests(method, pathParam, req, res, currentCo
                 
                 const relativePath = path.relative(process.cwd(), targetFilePath);
 
+                // 如果是 OAuth 凭据文件，自动添加到 provider_pools.json
+                if (provider === 'claude-kiro-oauth' || provider === 'gemini-cli-oauth' || provider === 'openai-qwen-oauth') {
+                    try {
+                        const poolsFilePath = currentConfig.PROVIDER_POOLS_FILE_PATH || './provider_pools.json';
+                        let pools = {};
+                        
+                        // 读取现有的 provider_pools.json
+                        try {
+                            const poolsData = await fs.readFile(poolsFilePath, 'utf8');
+                            pools = JSON.parse(poolsData);
+                        } catch (error) {
+                            console.log('[UI API] Creating new provider_pools.json');
+                        }
+                        
+                        // 确保提供商数组存在
+                        if (!pools[provider]) {
+                            pools[provider] = [];
+                        }
+                        
+                        // 生成账号配置
+                        const accountName = req.body.accountName || `account-${Date.now()}`;
+                        const accountConfig = {
+                            uuid: accountName,
+                            checkModelName: null,
+                            checkHealth: true,
+                            isHealthy: true,
+                            isDisabled: false,
+                            lastUsed: null,
+                            usageCount: 0,
+                            errorCount: 0,
+                            lastErrorTime: null
+                        };
+                        
+                        // 根据提供商类型添加相应的凭据路径字段
+                        if (provider === 'claude-kiro-oauth') {
+                            accountConfig.KIRO_OAUTH_CREDS_FILE_PATH = `./${relativePath}`;
+                        } else if (provider === 'gemini-cli-oauth') {
+                            accountConfig.GEMINI_OAUTH_CREDS_FILE_PATH = `./${relativePath}`;
+                            accountConfig.PROJECT_ID = req.body.projectId || null;
+                        } else if (provider === 'openai-qwen-oauth') {
+                            accountConfig.QWEN_OAUTH_CREDS_FILE_PATH = `./${relativePath}`;
+                        }
+                        
+                        // 添加到号池
+                        pools[provider].push(accountConfig);
+                        
+                        // 保存更新后的 provider_pools.json
+                        await fs.writeFile(poolsFilePath, JSON.stringify(pools, null, 2), 'utf8');
+                        console.log(`[UI API] Added account to provider pool: ${provider} -> ${accountName}`);
+                    } catch (error) {
+                        console.error('[UI API] Failed to update provider_pools.json:', error);
+                    }
+                }
+
                 // 广播更新事件
                 broadcastEvent('config_update', {
                     action: 'add',
@@ -389,7 +443,7 @@ export async function handleUIApiRequests(method, pathParam, req, res, currentCo
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({
                     success: true,
-                    message: '文件上传成功',
+                    message: '文件上传成功并已添加到号池',
                     filePath: relativePath,
                     originalName: req.file.originalname,
                     provider: provider
