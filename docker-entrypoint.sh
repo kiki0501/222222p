@@ -13,18 +13,36 @@ if [ ! -f config.json ]; then
     fi
 fi
 
+# 如果provider_pools.json不存在，创建空配置
+if [ ! -f provider_pools.json ]; then
+    echo "[Setup] Creating empty provider_pools.json"
+    echo '{}' > provider_pools.json
+fi
+
 # Hugging Face Space 使用 PORT 环境变量
 if [ -n "$PORT" ]; then
     export SERVER_PORT=$PORT
     echo "[Setup] Using PORT from environment: $PORT"
 fi
 
+# 使用 sed 更新 config.json 中的 HOST 为 0.0.0.0（容器环境必须）
+if [ -f config.json ]; then
+    echo "[Setup] Updating HOST to 0.0.0.0 in config.json"
+    sed -i 's/"HOST": "127.0.0.1"/"HOST": "0.0.0.0"/g' config.json
+    
+    # 如果设置了 PORT 环境变量，也更新配置文件
+    if [ -n "$SERVER_PORT" ]; then
+        echo "[Setup] Updating SERVER_PORT to $SERVER_PORT in config.json"
+        sed -i "s/\"SERVER_PORT\": [0-9]*/\"SERVER_PORT\": $SERVER_PORT/g" config.json
+    fi
+fi
+
 # 显示配置
 echo "[Setup] Configuration:"
 echo "  - MODEL_PROVIDER: ${MODEL_PROVIDER:-claude-kiro-oauth}"
 echo "  - SERVER_PORT: ${SERVER_PORT:-7860}"
-echo "  - HOST: ${HOST:-0.0.0.0}"
+echo "  - HOST: 0.0.0.0"
 
 # 启动应用
 echo "[Setup] Starting API server..."
-exec node src/api-server.js "$@"
+exec node src/api-server.js --host 0.0.0.0 --port ${SERVER_PORT:-7860} "$@"

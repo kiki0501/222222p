@@ -25,6 +25,14 @@ USER root
 # 创建目录用于存储日志和系统提示文件
 RUN mkdir -p /app/logs
 
+# 确保配置文件存在
+RUN if [ ! -f config.json ] && [ -f config.json.example ]; then \
+        cp config.json.example config.json; \
+    fi && \
+    if [ ! -f provider_pools.json ]; then \
+        echo '{}' > provider_pools.json; \
+    fi
+
 # 复制启动脚本
 COPY docker-entrypoint.sh /app/
 RUN chmod +x /app/docker-entrypoint.sh

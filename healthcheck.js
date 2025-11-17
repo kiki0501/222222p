@@ -6,8 +6,9 @@
 import http from 'http';
 
 // 从环境变量获取主机和端口，如果没有设置则使用默认值
-const HOST = process.env.HOST || 'localhost';
-const PORT = process.env.SERVER_PORT || 7860;
+// 在 Docker 容器中，健康检查应该使用 localhost 或 127.0.0.1
+const HOST = '127.0.0.1';
+const PORT = process.env.SERVER_PORT || process.env.PORT || 7860;
 
 // 发送HTTP请求到健康检查端点
 const options = {
