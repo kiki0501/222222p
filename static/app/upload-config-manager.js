@@ -116,6 +116,11 @@ function createConfigItemElement(config, index) {
                 <button class="btn-small btn-view" data-path="${config.path}">
                     <i class="fas fa-eye"></i> 查看
                 </button>
+                ${!config.isUsed && config.type === 'oauth' ? `
+                <button class="btn-small btn-link" data-path="${config.path}" data-name="${config.name}">
+                    <i class="fas fa-link"></i> 关联到号池
+                </button>
+                ` : ''}
                 <button class="btn-small btn-delete-small" data-path="${config.path}">
                     <i class="fas fa-trash"></i> 删除
                 </button>
@@ -125,12 +130,20 @@ function createConfigItemElement(config, index) {
 
     // 添加按钮事件监听器
     const viewBtn = item.querySelector('.btn-view');
+    const linkBtn = item.querySelector('.btn-link');
     const deleteBtn = item.querySelector('.btn-delete-small');
     
     if (viewBtn) {
         viewBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             viewConfig(config.path);
+        });
+    }
+    
+    if (linkBtn) {
+        linkBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            linkToProviderPool(config);
         });
     }
     
@@ -767,3 +780,153 @@ export {
     copyConfigContent,
     reloadConfig
 };
+
+/**
+
+ * 关联配置文件到提供商号池
+ * @param {Object} config - 配置文件信息
+ */
+async function linkToProviderPool(config) {
+    // 检测提供商类型
+    let provider = null;
+    let credFieldName = null;
+    
+    // 根据文件路径或名称判断提供商类型
+    if (config.path.includes('kiro') || config.name.includes('kiro')) {
+        provider = 'claude-kiro-oauth';
+        credFieldName = 'KIRO_OAUTH_CREDS_FILE_PATH';
+    } else if (config.path.includes('gemini') || config.name.includes('gemini') || config.name.includes('credentials')) {
+        provider = 'gemini-cli-oauth';
+        credFieldName = 'GEMINI_OAUTH_CREDS_FILE_PATH';
+    } else if (config.path.includes('qwen') || config.name.includes('qwen')) {
+        provider = 'openai-qwen-oauth';
+        credFieldName = 'QWEN_OAUTH_CREDS_FILE_PATH';
+    }
+    
+    // 如果无法自动检测，让用户选择
+    if (!provider) {
+        const providerChoice = await showProviderSelectionModal();
+        if (!providerChoice) return;
+        
+        provider = providerChoice.provider;
+        credFieldName = providerChoice.credFieldName;
+    }
+    
+    // 弹出对话框让用户输入账号名称
+    const accountName = prompt(`请输入账号名称（用于识别此账号）：`, `account-${Date.now()}`);
+    if (!accountName) return;
+    
+    try {
+        // 调用 API 关联到号池
+        const result = await window.apiClient.post('/link-to-pool', {
+            filePath: config.path,
+            provider: provider,
+            accountName: accountName,
+            credFieldName: credFieldName
+        });
+        
+        if (result.success) {
+            showToast('成功关联到号池！', 'success');
+            
+            // 刷新配置列表
+            await loadUploadConfigs();
+            
+            // 刷新提供商列表
+            if (window.loadProviders) {
+                setTimeout(() => window.loadProviders(), 1000);
+            }
+        } else {
+            showToast(result.message || '关联失败', 'error');
+        }
+    } catch (error) {
+        console.error('关联到号池失败:', error);
+        showToast('关联失败: ' + error.message, 'error');
+    }
+}
+
+/**
+ * 显示提供商选择模态框
+ * @returns {Promise<Object|null>} 返回选择的提供商信息或 null
+ */
+function showProviderSelectionModal() {
+    return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.style.display = 'flex';
+        
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 400px;">
+                <div class="modal-header">
+                    <h3>选择提供商类型</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>请选择此凭据文件对应的提供商：</p>
+                    <div style="margin-top: 15px;">
+                        <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+                            <input type="radio" name="provider" value="claude-kiro-oauth" checked>
+                            <span style="margin-left: 8px;">Kiro Claude (claude-kiro-oauth)</span>
+                        </label>
+                        <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+                            <input type="radio" name="provider" value="gemini-cli-oauth">
+                            <span style="margin-left: 8px;">Gemini CLI (gemini-cli-oauth)</span>
+                        </label>
+                        <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+                            <input type="radio" name="provider" value="openai-qwen-oauth">
+                            <span style="margin-left: 8px;">Qwen OAuth (openai-qwen-oauth)</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary cancel-btn">取消</button>
+                    <button class="btn btn-primary confirm-btn">确认</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        const closeBtn = modal.querySelector('.modal-close');
+        const cancelBtn = modal.querySelector('.cancel-btn');
+        const confirmBtn = modal.querySelector('.confirm-btn');
+        
+        const cleanup = () => {
+            document.body.removeChild(modal);
+        };
+        
+        closeBtn.addEventListener('click', () => {
+            cleanup();
+            resolve(null);
+        });
+        
+        cancelBtn.addEventListener('click', () => {
+            cleanup();
+            resolve(null);
+        });
+        
+        confirmBtn.addEventListener('click', () => {
+            const selectedRadio = modal.querySelector('input[name="provider"]:checked');
+            const provider = selectedRadio.value;
+            
+            const credFieldMap = {
+                'claude-kiro-oauth': 'KIRO_OAUTH_CREDS_FILE_PATH',
+                'gemini-cli-oauth': 'GEMINI_OAUTH_CREDS_FILE_PATH',
+                'openai-qwen-oauth': 'QWEN_OAUTH_CREDS_FILE_PATH'
+            };
+            
+            cleanup();
+            resolve({
+                provider: provider,
+                credFieldName: credFieldMap[provider]
+            });
+        });
+        
+        // 点击模态框外部关闭
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                cleanup();
+                resolve(null);
+            }
+        });
+    });
+}

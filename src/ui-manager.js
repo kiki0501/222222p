@@ -1157,6 +1157,106 @@ export async function handleUIApiRequests(method, pathParam, req, res, currentCo
         }
     }
 
+    // Link configuration file to provider pool
+    if (method === 'POST' && pathParam === '/api/link-to-pool') {
+        try {
+            const body = await getRequestBody(req);
+            const { filePath, provider, accountName, credFieldName } = body;
+            
+            if (!filePath || !provider || !accountName || !credFieldName) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: false,
+                    message: '缺少必需参数'
+                }));
+                return true;
+            }
+            
+            // 读取 provider_pools.json
+            const poolsFilePath = currentConfig.PROVIDER_POOLS_FILE_PATH || './provider_pools.json';
+            let pools = {};
+            
+            try {
+                const poolsData = await fs.readFile(poolsFilePath, 'utf8');
+                pools = JSON.parse(poolsData);
+            } catch (error) {
+                console.log('[UI API] Creating new provider_pools.json');
+            }
+            
+            // 确保提供商数组存在
+            if (!pools[provider]) {
+                pools[provider] = [];
+            }
+            
+            // 检查是否已经存在
+            const existingIndex = pools[provider].findIndex(
+                acc => acc[credFieldName] === `./${filePath}` || acc[credFieldName] === filePath
+            );
+            
+            if (existingIndex !== -1) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: false,
+                    message: '此文件已经关联到号池'
+                }));
+                return true;
+            }
+            
+            // 创建账号配置
+            const accountConfig = {
+                [credFieldName]: `./${filePath}`,
+                uuid: accountName,
+                checkModelName: null,
+                checkHealth: true,
+                isHealthy: true,
+                isDisabled: false,
+                lastUsed: null,
+                usageCount: 0,
+                errorCount: 0,
+                lastErrorTime: null
+            };
+            
+            // 如果是 Gemini，添加 PROJECT_ID 字段
+            if (provider === 'gemini-cli-oauth') {
+                accountConfig.PROJECT_ID = body.projectId || null;
+            }
+            
+            // 添加到号池
+            pools[provider].push(accountConfig);
+            
+            // 保存
+            await fs.writeFile(poolsFilePath, JSON.stringify(pools, null, 2), 'utf8');
+            
+            console.log(`[UI API] Linked file to provider pool: ${provider} -> ${accountName}`);
+            
+            // 广播更新事件
+            broadcastEvent('config_update', {
+                action: 'link',
+                provider: provider,
+                accountName: accountName,
+                timestamp: new Date().toISOString()
+            });
+            
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+                success: true,
+                message: '成功关联到号池',
+                provider: provider,
+                accountName: accountName
+            }));
+            
+            return true;
+        } catch (error) {
+            console.error('[UI API] Link to pool error:', error);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+                success: false,
+                message: error.message || '关联失败'
+            }));
+            return true;
+        }
+    }
+
     // Reload configuration files
     if (method === 'POST' && pathParam === '/api/reload-config') {
         try {
