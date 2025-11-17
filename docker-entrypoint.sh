@@ -19,6 +19,15 @@ if [ ! -f provider_pools.json ]; then
     echo '{}' > provider_pools.json
 fi
 
+# 设置登录密码（从环境变量或使用默认值）
+if [ -n "$UI_PASSWORD" ]; then
+    echo "[Setup] Setting UI login password from environment variable"
+    echo "$UI_PASSWORD" > pwd
+elif [ ! -f pwd ]; then
+    echo "[Setup] Creating default password file (pwd)"
+    echo "123456" > pwd
+fi
+
 # Hugging Face Space 使用 PORT 环境变量
 if [ -n "$PORT" ]; then
     export SERVER_PORT=$PORT

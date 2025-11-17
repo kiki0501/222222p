@@ -44,7 +44,8 @@ EXPOSE 7860
 ENV SPACE_ID=docker \
     SERVER_PORT=7860 \
     HOST=0.0.0.0 \
-    MODEL_PROVIDER=claude-kiro-oauth
+    MODEL_PROVIDER=claude-kiro-oauth \
+    UI_PASSWORD=123456
 
 # 添加健康检查
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

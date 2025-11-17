@@ -22,7 +22,10 @@
 MODEL_PROVIDER=claude-kiro-oauth
 SERVER_PORT=7860
 HOST=0.0.0.0
+UI_PASSWORD=your_secure_password  # Web UI 登录密码，默认为 123456
 ```
+
+**重要提示**：强烈建议修改默认密码 `UI_PASSWORD`，特别是在公开部署时！
 
 ### 4. 上传文件
 将以下文件推送到 Space 仓库：
@@ -51,6 +54,7 @@ git push
 | `PORT` | 7860 | HF Space 自动设置，无需手动配置 |
 | `MODEL_PROVIDER` | claude-kiro-oauth | 模型提供商 |
 | `HOST` | 0.0.0.0 | 监听地址 |
+| `UI_PASSWORD` | 123456 | Web UI 登录密码 |
 | `SPACE_ID` | docker | 容器标识（自动设置） |
 
 ## 故障排查
