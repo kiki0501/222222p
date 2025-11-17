@@ -1,7 +1,6 @@
 // Kiro 凭据上传功能模块
 
 import { showToast } from './utils.js';
-import { apiRequest } from './api.js';
 
 let selectedFile = null;
 

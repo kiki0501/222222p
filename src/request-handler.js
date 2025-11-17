@@ -34,9 +34,14 @@ export function createRequestHandler(config, providerPoolManager) {
         }
 
         // Serve static files for UI (除了登录页面需要认证)
-        if (path.startsWith('/static/') || path === '/' || path === '/favicon.ico' || path === '/index.html' || path.startsWith('/app/') || path === '/login.html') {
+        if (path.startsWith('/static/') || path === '/' || path === '/favicon.ico' || path === '/index.html' || path.startsWith('/app/') || path === '/login.html' || path === '/test.html') {
             const served = await serveStaticFiles(path, res);
-            if (served) return;
+            if (served) {
+                // 静态文件已成功提供，直接返回
+                return;
+            }
+            // 如果文件不存在，继续处理（可能是 API 请求）
+            console.log(`[Static] File not found: ${path}`);
         }
 
         const uiHandled = await handleUIApiRequests(method, path, req, res, currentConfig, providerPoolManager);

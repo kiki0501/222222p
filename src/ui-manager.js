@@ -224,7 +224,16 @@ const upload = multer({
  * @param {http.ServerResponse} res - The HTTP response object
  */
 export async function serveStaticFiles(pathParam, res) {
-    const filePath = path.join(process.cwd(), 'static', pathParam === '/' || pathParam === '/index.html' ? 'index.html' : pathParam.replace('/static/', ''));
+    // 处理根路径和 index.html
+    if (pathParam === '/' || pathParam === '/index.html') {
+        pathParam = '/index.html';
+    }
+    
+    // 移除 /static/ 前缀（如果有）
+    let relativePath = pathParam.replace('/static/', '');
+    
+    // 构建文件路径
+    const filePath = path.join(process.cwd(), 'static', relativePath);
 
     if (existsSync(filePath)) {
         const ext = path.extname(filePath);
@@ -232,12 +241,22 @@ export async function serveStaticFiles(pathParam, res) {
             '.html': 'text/html',
             '.css': 'text/css',
             '.js': 'application/javascript',
+            '.json': 'application/json',
             '.png': 'image/png',
             '.jpg': 'image/jpeg',
-            '.ico': 'image/x-icon'
+            '.jpeg': 'image/jpeg',
+            '.gif': 'image/gif',
+            '.svg': 'image/svg+xml',
+            '.ico': 'image/x-icon',
+            '.woff': 'font/woff',
+            '.woff2': 'font/woff2',
+            '.ttf': 'font/ttf'
         }[ext] || 'text/plain';
 
-        res.writeHead(200, { 'Content-Type': contentType });
+        res.writeHead(200, { 
+            'Content-Type': contentType,
+            'Cache-Control': 'public, max-age=3600'
+        });
         res.end(readFileSync(filePath));
         return true;
     }
