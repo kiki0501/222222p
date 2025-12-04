@@ -725,9 +725,22 @@ async initializeAuth(forceRefresh = false) {
 
             request.conversationState.currentMessage.userInputMessage = userInputMessage;
         } else if (currentMessage.role === 'assistant') {
-            request.conversationState.currentMessage.assistantResponseMessage = {
-                content: currentContent,
-                toolUses: currentToolUses.length > 0 ? currentToolUses : undefined
+            // Fix: AWS CodeWhisperer API does not support assistantResponseMessage as currentMessage.
+            // If the last message is from assistant (Prefill), move it to history and send a dummy user message.
+            
+            // Add the assistant message to history
+            request.conversationState.history.push({
+                assistantResponseMessage: {
+                    content: currentContent,
+                    toolUses: currentToolUses.length > 0 ? currentToolUses : undefined
+                }
+            });
+
+            // Set currentMessage to a dummy user message to trigger generation
+            request.conversationState.currentMessage.userInputMessage = {
+                content: "Continue",
+                modelId: codewhispererModel,
+                origin: KIRO_CONSTANTS.ORIGIN_AI_EDITOR
             };
         }
 
