@@ -368,9 +368,19 @@ async initializeAuth(forceRefresh = false) {
                     const filePath = path.join(dirPath, file);
                     const credentials = await loadCredentialsFromFile(filePath);
                     if (credentials) {
-                        // 保留已有的 expiresAt,避免被覆盖
-                        credentials.expiresAt = mergedCredentials.expiresAt;
-                        Object.assign(mergedCredentials, credentials);
+                        // 只合并 clientId 和 clientSecret,不覆盖 token 相关字段
+                        if (credentials.clientId && !mergedCredentials.clientId) {
+                            mergedCredentials.clientId = credentials.clientId;
+                        }
+                        if (credentials.clientSecret && !mergedCredentials.clientSecret) {
+                            mergedCredentials.clientSecret = credentials.clientSecret;
+                        }
+                        if (credentials.authMethod && !mergedCredentials.authMethod) {
+                            mergedCredentials.authMethod = credentials.authMethod;
+                        }
+                        if (credentials.region && !mergedCredentials.region) {
+                            mergedCredentials.region = credentials.region;
+                        }
                         console.debug(`[Kiro Auth] Loaded Client credentials from ${file}`);
                     }
                 }
@@ -409,6 +419,15 @@ async initializeAuth(forceRefresh = false) {
         if (!this.refreshToken) {
             throw new Error('No refresh token available to refresh access token.');
         }
+        
+        // 检查 clientId 和 clientSecret 是否存在(IdC 认证需要)
+        if (this.authMethod !== KIRO_CONSTANTS.AUTH_METHOD_SOCIAL) {
+            if (!this.clientId || !this.clientSecret) {
+                console.error('[Kiro Auth] Missing clientId or clientSecret for IdC authentication');
+                throw new Error('Missing clientId or clientSecret for IdC authentication');
+            }
+        }
+        
         try {
             const requestBody = {
                 refreshToken: this.refreshToken,
@@ -421,6 +440,8 @@ async initializeAuth(forceRefresh = false) {
                 requestBody.clientSecret = this.clientSecret;
                 requestBody.grantType = 'refresh_token';
             }
+            
+            console.debug(`[Kiro Auth] Attempting token refresh with method: ${this.authMethod}`);
             const response = await this.axiosInstance.post(refreshUrl, requestBody);
             console.log('[Kiro Auth] Token refresh response: ok');
 
@@ -449,6 +470,10 @@ async initializeAuth(forceRefresh = false) {
             }
         } catch (error) {
             console.error('[Kiro Auth] Token refresh failed:', error.message);
+            if (error.response) {
+                console.error('[Kiro Auth] Refresh error status:', error.response.status);
+                console.error('[Kiro Auth] Refresh error data:', JSON.stringify(error.response.data, null, 2));
+            }
             throw new Error(`Token refresh failed: ${error.message}`);
         }
     }
