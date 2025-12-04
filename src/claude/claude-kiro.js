@@ -25,6 +25,7 @@ const MODEL_MAPPING = {
     "claude-sonnet-4-5-20250929": "CLAUDE_SONNET_4_5_20250929_V1_0",
     "claude-sonnet-4-20250514": "CLAUDE_SONNET_4_20250514_V1_0",
     "claude-3-7-sonnet-20250219": "CLAUDE_3_7_SONNET_20250219_V1_0",
+    "claude-opus-4-5-20251101": "CLAUDE_SONNET_4_5_20250929_V1_0", // 新增 Opus 模型映射到 Sonnet 4.5
     "amazonq-claude-sonnet-4-20250514": "CLAUDE_SONNET_4_20250514_V1_0",
     "amazonq-claude-3-7-sonnet-20250219": "CLAUDE_3_7_SONNET_20250219_V1_0"
 };
@@ -788,9 +789,37 @@ async initializeAuth(forceRefresh = false) {
 
             // 当 model 以 kiro-amazonq 开头时，使用 amazonQUrl，否则使用 baseUrl
             const requestUrl = model.startsWith('amazonq') ? this.amazonQUrl : this.baseUrl;
+            
+            // 详细的调试日志
+            console.log('[Kiro Debug] ========== API Request Details ==========');
+            console.log('[Kiro Debug] Request URL:', requestUrl);
+            console.log('[Kiro Debug] Model (input):', model);
+            console.log('[Kiro Debug] Model (mapped):', MODEL_MAPPING[model] || 'NOT_FOUND');
+            console.log('[Kiro Debug] Request Headers:', JSON.stringify(headers, null, 2));
+            console.log('[Kiro Debug] Request Body:', JSON.stringify(requestData, null, 2));
+            console.log('[Kiro Debug] Original Messages Count:', body.messages?.length || 0);
+            console.log('[Kiro Debug] Has Tools:', !!body.tools);
+            console.log('[Kiro Debug] Has System Prompt:', !!body.system);
+            console.log('[Kiro Debug] Auth Method:', this.authMethod);
+            console.log('[Kiro Debug] Region:', this.region);
+            console.log('[Kiro Debug] Profile ARN:', this.profileArn || 'NOT_SET');
+            console.log('[Kiro Debug] ==========================================');
+            
             const response = await this.axiosInstance.post(requestUrl, requestData, { headers });
+            console.log('[Kiro Debug] Response Status:', response.status);
             return response;
         } catch (error) {
+            // 详细的错误日志
+            console.error('[Kiro Error] ========== API Error Details ==========');
+            console.error('[Kiro Error] Status Code:', error.response?.status);
+            console.error('[Kiro Error] Status Text:', error.response?.statusText);
+            console.error('[Kiro Error] Error Message:', error.message);
+            console.error('[Kiro Error] Response Data:', JSON.stringify(error.response?.data, null, 2));
+            console.error('[Kiro Error] Response Headers:', JSON.stringify(error.response?.headers, null, 2));
+            console.error('[Kiro Error] Request URL:', error.config?.url);
+            console.error('[Kiro Error] Request Method:', error.config?.method);
+            console.error('[Kiro Error] ==========================================');
+            
             if (error.response?.status === 403 && !isRetry) {
                 console.log('[Kiro] Received 403. Attempting token refresh and retrying...');
                 try {
@@ -800,6 +829,30 @@ async initializeAuth(forceRefresh = false) {
                     console.error('[Kiro] Token refresh failed during 403 retry:', refreshError.message);
                     throw refreshError;
                 }
+            }
+
+            // Handle 400 Bad Request with detailed error information
+            if (error.response?.status === 400) {
+                const errorDetails = error.response?.data || {};
+                console.error('[Kiro] 400 Bad Request - Possible causes:');
+                console.error('  1. Invalid request body format');
+                console.error('  2. Missing required fields (profileArn, region, etc.)');
+                console.error('  3. Invalid model mapping');
+                console.error('  4. Malformed message content or tool definitions');
+                console.error('[Kiro] Error Details:', JSON.stringify(errorDetails, null, 2));
+                
+                // 创建更详细的错误消息
+                const detailedError = new Error(
+                    `400 Bad Request: ${errorDetails.message || error.message}\n` +
+                    `Model: ${model}
+` +
+                    `Mapped Model: ${MODEL_MAPPING[model] || 'NOT_FOUND'}
+` +
+                    `URL: ${error.config?.url}\n` +
+                    `Details: ${JSON.stringify(errorDetails)}`
+                );
+                detailedError.response = error.response;
+                throw detailedError;
             }
 
             // Handle 429 (Too Many Requests) with exponential backoff
