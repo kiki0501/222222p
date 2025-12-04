@@ -25,7 +25,7 @@ const MODEL_MAPPING = {
     "claude-sonnet-4-5-20250929": "CLAUDE_SONNET_4_5_20250929_V1_0",
     "claude-sonnet-4-20250514": "CLAUDE_SONNET_4_20250514_V1_0",
     "claude-3-7-sonnet-20250219": "CLAUDE_3_7_SONNET_20250219_V1_0",
-    "claude-opus-4-5-20251101": "CLAUDE_SONNET_4_5_20250929_V1_0", // 新增 Opus 模型映射到 Sonnet 4.5
+    "claude-opus-4-5-20251101": "CLAUDE_OPUS_4_5_20251101_V1_0", // Opus 4.5 模型
     "amazonq-claude-sonnet-4-20250514": "CLAUDE_SONNET_4_20250514_V1_0",
     "amazonq-claude-3-7-sonnet-20250219": "CLAUDE_3_7_SONNET_20250219_V1_0"
 };
@@ -517,6 +517,22 @@ async initializeAuth(forceRefresh = false) {
 
         if (processedMessages.length === 0) {
             throw new Error('No user messages found');
+        }
+        
+        // 检查消息总长度,如果太长则截断历史消息
+        const MAX_CONTENT_LENGTH = 100000; // AWS CodeWhisperer 的大致限制
+        let totalLength = (systemPrompt || '').length;
+        for (const msg of processedMessages) {
+            totalLength += this.getContentText(msg).length;
+        }
+        
+        if (totalLength > MAX_CONTENT_LENGTH) {
+            console.warn(`[Kiro] Input too long (${totalLength} chars), truncating history...`);
+            // 保留最后几条消息和当前消息
+            const keepCount = Math.min(4, processedMessages.length);
+            const truncatedMessages = processedMessages.slice(-keepCount);
+            console.warn(`[Kiro] Kept last ${keepCount} messages out of ${processedMessages.length}`);
+            return this.buildCodewhispererRequest(truncatedMessages, model, tools, inSystemPrompt);
         }
 
         const codewhispererModel = MODEL_MAPPING[model] || MODEL_MAPPING[this.modelName];
