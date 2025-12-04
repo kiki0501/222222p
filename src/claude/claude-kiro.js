@@ -586,19 +586,20 @@ async initializeAuth(forceRefresh = false) {
                 let userInputMessage = {
                     content: '',
                     modelId: codewhispererModel,
-                    origin: KIRO_CONSTANTS.ORIGIN_AI_EDITOR,
-                    userInputMessageContext: {}
+                    origin: KIRO_CONSTANTS.ORIGIN_AI_EDITOR
                 };
+                let userInputMessageContext = {};
+
                 if (Array.isArray(message.content)) {
                     userInputMessage.images = []; // Initialize images array
                     for (const part of message.content) {
                         if (part.type === 'text') {
                             userInputMessage.content += part.text;
                         } else if (part.type === 'tool_result') {
-                            if (!userInputMessage.userInputMessageContext.toolResults) {
-                                userInputMessage.userInputMessageContext.toolResults = [];
+                            if (!userInputMessageContext.toolResults) {
+                                userInputMessageContext.toolResults = [];
                             }
-                            userInputMessage.userInputMessageContext.toolResults.push({
+                            userInputMessageContext.toolResults.push({
                                 content: [{ text: this.getContentText(part.content) }],
                                 status: 'success',
                                 toolUseId: part.tool_use_id
@@ -615,6 +616,16 @@ async initializeAuth(forceRefresh = false) {
                 } else {
                     userInputMessage.content = this.getContentText(message);
                 }
+
+                if (Object.keys(userInputMessageContext).length > 0) {
+                    userInputMessage.userInputMessageContext = userInputMessageContext;
+                }
+
+                // Clean up empty images array if it was initialized but not used
+                if (userInputMessage.images && userInputMessage.images.length === 0) {
+                    delete userInputMessage.images;
+                }
+
                 history.push({ userInputMessage });
             } else if (message.role === 'assistant') {
                 let assistantResponseMessage = {
@@ -690,16 +701,29 @@ async initializeAuth(forceRefresh = false) {
         };
 
         if (currentMessage.role === 'user') {
-            request.conversationState.currentMessage.userInputMessage = {
+            const userInputMessage = {
                 content: currentContent,
                 modelId: codewhispererModel,
                 origin: KIRO_CONSTANTS.ORIGIN_AI_EDITOR,
-                images: currentImages && currentImages.length > 0 ? currentImages : null, // Add images here
-                userInputMessageContext: {
-                    toolResults: currentToolResults.length > 0 ? currentToolResults : null,
-                    tools: Object.keys(toolsContext).length > 0 ? toolsContext.tools : null
-                }
             };
+
+            if (currentImages && currentImages.length > 0) {
+                userInputMessage.images = currentImages;
+            }
+
+            const userInputMessageContext = {};
+            if (currentToolResults.length > 0) {
+                userInputMessageContext.toolResults = currentToolResults;
+            }
+            if (Object.keys(toolsContext).length > 0 && toolsContext.tools) {
+                userInputMessageContext.tools = toolsContext.tools;
+            }
+
+            if (Object.keys(userInputMessageContext).length > 0) {
+                userInputMessage.userInputMessageContext = userInputMessageContext;
+            }
+
+            request.conversationState.currentMessage.userInputMessage = userInputMessage;
         } else if (currentMessage.role === 'assistant') {
             request.conversationState.currentMessage.assistantResponseMessage = {
                 content: currentContent,
