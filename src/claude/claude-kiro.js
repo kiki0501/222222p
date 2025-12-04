@@ -666,7 +666,8 @@ async initializeAuth(forceRefresh = false) {
             };
         }
 
-        if (this.authMethod === KIRO_CONSTANTS.AUTH_METHOD_SOCIAL) {
+        // 添加 profileArn (如果存在)
+        if (this.profileArn) {
             request.profileArn = this.profileArn;
         }
         
