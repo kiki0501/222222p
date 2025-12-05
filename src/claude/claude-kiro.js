@@ -346,7 +346,7 @@ async initializeAuth(forceRefresh = false) {
         }
 
         // Priority 2 & 3 合并: 从指定文件路径或目录加载凭证
-        // 读取指定的 credPath 文件以及目录下的其他 JSON 文件(排除当前文件)
+        // 读取指定�?credPath 文件以及目录下的其他 JSON 文件(排除当前文件)
         const targetFilePath = this.credsFilePath || path.join(this.credPath, KIRO_AUTH_TOKEN_FILE);
         const dirPath = path.dirname(targetFilePath);
         const targetFileName = path.basename(targetFilePath);
@@ -368,7 +368,7 @@ async initializeAuth(forceRefresh = false) {
                     const filePath = path.join(dirPath, file);
                     const credentials = await loadCredentialsFromFile(filePath);
                     if (credentials) {
-                        // 只合并 clientId 和 clientSecret,不覆盖 token 相关字段
+                        // 只合�?clientId �?clientSecret,不覆�?token 相关字段
                         if (credentials.clientId && !mergedCredentials.clientId) {
                             mergedCredentials.clientId = credentials.clientId;
                         }
@@ -420,7 +420,7 @@ async initializeAuth(forceRefresh = false) {
             throw new Error('No refresh token available to refresh access token.');
         }
         
-        // 检查 clientId 和 clientSecret 是否存在(IdC 认证需要)
+        // 检�?clientId �?clientSecret 是否存在(IdC 认证需�?
         if (this.authMethod !== KIRO_CONSTANTS.AUTH_METHOD_SOCIAL) {
             if (!this.clientId || !this.clientSecret) {
                 console.error('[Kiro Auth] Missing clientId or clientSecret for IdC authentication');
@@ -519,20 +519,55 @@ async initializeAuth(forceRefresh = false) {
             throw new Error('No user messages found');
         }
         
-        // 检查消息总长度,如果太长则截断历史消息
-        const MAX_CONTENT_LENGTH = 100000; // AWS CodeWhisperer 的大致限制
+        // 检查消息总长�?如果太长则截断历史消�?
+        const MAX_CONTENT_LENGTH = 100000; // AWS CodeWhisperer 的大致限�?
         let totalLength = (systemPrompt || '').length;
         for (const msg of processedMessages) {
             totalLength += this.getContentText(msg).length;
         }
         
+        // 添加递归深度参数
+        const recursionDepth = arguments[4] || 0;
+        const MAX_RECURSION_DEPTH = 3;
+        
         if (totalLength > MAX_CONTENT_LENGTH) {
             console.warn(`[Kiro] Input too long (${totalLength} chars), truncating history...`);
+            
+            // 检查递归深度防止无限循环
+            if (recursionDepth >= MAX_RECURSION_DEPTH) {
+                console.error(`[Kiro] Max recursion depth reached, forcefully truncating`);
+                if (systemPrompt && systemPrompt.length > 30000) {
+                    systemPrompt = systemPrompt.substring(0, 30000) + "\n[Truncated]";
+                }
+                const lastMsg = processedMessages[processedMessages.length - 1];
+                const lastContent = this.getContentText(lastMsg);
+                if (lastContent.length > 30000) {
+                    const truncatedMsg = { ...lastMsg, content: lastContent.substring(0, 30000) + "\n[Truncated]" };
+                    return this.buildCodewhispererRequest([truncatedMsg], model, tools, systemPrompt, recursionDepth + 1);
+                }
+                throw new Error(`Input too long (${totalLength} chars) after max truncation`);
+            }
+            
+            // 如果消息数很少,截断内容
+            if (processedMessages.length <= 2) {
+                if (systemPrompt && systemPrompt.length > 50000) {
+                    console.warn(`[Kiro] Truncating system prompt`);
+                    return this.buildCodewhispererRequest(processedMessages, model, tools, systemPrompt.substring(0, 50000) + "\n[Truncated]", recursionDepth + 1);
+                }
+                const lastMsg = processedMessages[processedMessages.length - 1];
+                const lastContent = this.getContentText(lastMsg);
+                if (lastContent.length > 50000) {
+                    console.warn(`[Kiro] Truncating last message`);
+                    const truncatedMsg = { ...lastMsg, content: lastContent.substring(0, 50000) + "\n[Truncated]" };
+                    return this.buildCodewhispererRequest([...processedMessages.slice(0, -1), truncatedMsg], model, tools, systemPrompt, recursionDepth + 1);
+                }
+            }
+            
             // 保留最后几条消息和当前消息
             const keepCount = Math.min(4, processedMessages.length);
             const truncatedMessages = processedMessages.slice(-keepCount);
             console.warn(`[Kiro] Kept last ${keepCount} messages out of ${processedMessages.length}`);
-            return this.buildCodewhispererRequest(truncatedMessages, model, tools, inSystemPrompt);
+            return this.buildCodewhispererRequest(truncatedMessages, model, tools, inSystemPrompt, recursionDepth + 1);
         }
 
         const codewhispererModel = MODEL_MAPPING[model] || MODEL_MAPPING[this.modelName];
@@ -759,15 +794,15 @@ async initializeAuth(forceRefresh = false) {
         let currentToolCallDict = null;
         // console.log(`rawStr=${rawStr}`);
 
-        // 改进的 SSE 事件解析：匹配 :message-typeevent 后面的 JSON 数据
-        // 使用更精确的正则来匹配 SSE 格式的事件
+        // 改进�?SSE 事件解析：匹�?:message-typeevent 后面�?JSON 数据
+        // 使用更精确的正则来匹�?SSE 格式的事�?
         const sseEventRegex = /:message-typeevent(\{[^]*?(?=:event-type|$))/g;
         const legacyEventRegex = /event(\{.*?(?=event\{|$))/gs;
         
         // 首先尝试使用 SSE 格式解析
         let matches = [...rawStr.matchAll(sseEventRegex)];
         
-        // 如果 SSE 格式没有匹配到，回退到旧的格式
+        // 如果 SSE 格式没有匹配到，回退到旧的格�?
         if (matches.length === 0) {
             matches = [...rawStr.matchAll(legacyEventRegex)];
         }
@@ -778,14 +813,14 @@ async initializeAuth(forceRefresh = false) {
                 continue;
             }
 
-            // 尝试找到完整的 JSON 对象
+            // 尝试找到完整�?JSON 对象
             let searchPos = 0;
             while ((searchPos = potentialJsonBlock.indexOf('}', searchPos + 1)) !== -1) {
                 const jsonCandidate = potentialJsonBlock.substring(0, searchPos + 1).trim();
                 try {
                     const eventData = JSON.parse(jsonCandidate);
 
-                    // 优先处理结构化工具调用事件
+                    // 优先处理结构化工具调用事�?
                     if (eventData.name && eventData.toolUseId) {
                         if (!currentToolCallDict) {
                             currentToolCallDict = {
@@ -811,9 +846,9 @@ async initializeAuth(forceRefresh = false) {
                             currentToolCallDict = null;
                         }
                     } else if (!eventData.followupPrompt && eventData.content) {
-                        // 处理内容，移除转义字符
+                        // 处理内容，移除转义字�?
                         let decodedContent = eventData.content;
-                        // 处理常见的转义序列
+                        // 处理常见的转义序�?
                         decodedContent = decodedContent.replace(/(?<!\\)\\n/g, '\n');
                         // decodedContent = decodedContent.replace(/(?<!\\)\\t/g, '\t');
                         // decodedContent = decodedContent.replace(/\\"/g, '"');
@@ -828,7 +863,7 @@ async initializeAuth(forceRefresh = false) {
             }
         }
         
-        // 如果还有未完成的工具调用，添加到列表中
+        // 如果还有未完成的工具调用，添加到列表�?
         if (currentToolCallDict) {
             toolCalls.push(currentToolCallDict);
         }
@@ -866,10 +901,10 @@ async initializeAuth(forceRefresh = false) {
                 'amz-sdk-invocation-id': `${uuidv4()}`,
             };
 
-            // 当 model 以 kiro-amazonq 开头时，使用 amazonQUrl，否则使用 baseUrl
+            // �?model �?kiro-amazonq 开头时，使�?amazonQUrl，否则使�?baseUrl
             const requestUrl = model.startsWith('amazonq') ? this.amazonQUrl : this.baseUrl;
             
-            // 详细的调试日志
+            // 详细的调试日�?
             console.log('[Kiro Debug] ========== API Request Details ==========');
             console.log('[Kiro Debug] Request URL:', requestUrl);
             console.log('[Kiro Debug] Model (input):', model);
@@ -888,7 +923,7 @@ async initializeAuth(forceRefresh = false) {
             console.log('[Kiro Debug] Response Status:', response.status);
             return response;
         } catch (error) {
-            // 详细的错误日志
+            // 详细的错误日�?
             console.error('[Kiro Error] ========== API Error Details ==========');
             console.error('[Kiro Error] Status Code:', error.response?.status);
             console.error('[Kiro Error] Status Text:', error.response?.statusText);
@@ -1000,7 +1035,7 @@ async initializeAuth(forceRefresh = false) {
     async generateContent(model, requestBody) {
         if (!this.isInitialized) await this.initialize();
         
-        // 检查 token 是否即将过期,如果是则先刷新
+        // 检�?token 是否即将过期,如果是则先刷�?
         if (this.isExpiryDateNear()) {
             console.log('[Kiro] Token is near expiry, refreshing before generateContent request...');
             await this.initializeAuth(true);
@@ -1019,7 +1054,7 @@ async initializeAuth(forceRefresh = false) {
         }
     }
 
-    //kiro提供的接口没有流式返回
+    //kiro提供的接口没有流式返�?
     async streamApi(method, model, body, isRetry = false, retryCount = 0) {
         try {
             // 直接调用并返回Promise，最终解析为response
@@ -1034,7 +1069,7 @@ async initializeAuth(forceRefresh = false) {
     async * generateContentStream(model, requestBody) {
         if (!this.isInitialized) await this.initialize();
         
-        // 检查 token 是否即将过期,如果是则先刷新
+        // 检�?token 是否即将过期,如果是则先刷�?
         if (this.isExpiryDateNear()) {
             console.log('[Kiro] Token is near expiry, refreshing before generateContentStream request...');
             await this.initializeAuth(true);
